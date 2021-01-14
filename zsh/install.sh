@@ -1,35 +1,25 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-# shellcheck source=distro.sh
-. ../distro.sh
-# shellcheck source=helpers.sh
-. ../helpers.sh
+BASE_DIR=$(dirname "${BASH_SOURCE[0]:-$0}")
+cd "${BASE_DIR}/.." || exit 127
 
-echo_info "Installing ZSH with OH-MY-ZSH..."
-_install zsh
+# shellcheck source=../scripts/utils.sh
+. scripts/utils.sh
 
-echo_info "Installing oh-my-zsh..."
-sh -c "$(curl -fsSL https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh)"
+install_package zsh
 
-echo_info "Installing zsh-autosuggestions..."
-git clone https://github.com/zsh-users/zsh-autosuggestions "$ZSH_CUSTOM/plugins/zsh-autosuggestions"
+execute 'sh -c "$(curl -fsSL https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh)"' "Installing Oh-My-ZSH..."
 
-echo_info "Installing zsh-autosuggestions..."
-git clone https://github.com/zsh-users/zsh-syntax-highlighting "$ZSH_CUSTOM/plugins/zsh-syntax-highlighting"
+execute "git clone https://github.com/zsh-users/zsh-autosuggestions $ZSH_CUSTOM/plugins/zsh-autosuggestions" "Clonning zsh-autosuggestions..."
 
-echo_info "Installing fzf-tab..."
-git clone https://github.com/Aloxaf/fzf-tab "$ZSH_CUSTOM/plugins/fzf-tab"
+execute "git clone https://github.com/zsh-users/zsh-syntax-highlighting $ZSH_CUSTOM/plugins/zsh-syntax-highlighting" "Clonning zsh-syntax-highlighting..."
 
-echo_info "Installing Powerlevel10k..."
-git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "$ZSH_CUSTOM/themes/powerlevel10k"
+execute "git clone https://github.com/Aloxaf/fzf-tab $ZSH_CUSTOM/plugins/fzf-tab" "Clonning fzf-tab..."
 
-echo_info "Installing zplug..."
-curl -sL --proto-redir -all,https https://raw.githubusercontent.com/zplug/installer/master/installer.zsh | zsh
+execute "git clone --depth=1 https://github.com/romkatv/powerlevel10k.git $ZSH_CUSTOM/themes/powerlevel10k" "Clonning powerlevel10k..."
 
-echo_info "Symlink .zshrc..."
-ln -sfT "$HOME/.dotfiles/zsh/zshrc" "$HOME/.zshrc"
+execute 'curl -sL --proto-redir -all,https https://raw.githubusercontent.com/zplug/installer/master/installer.zsh | zsh' "Installing zplug..."
 
-echo_info "Changing shell..."
+Symlink "$HOME/.dotfiles/zsh/zshrc" "$HOME/.zshrc"
+
 chsh -s "$(command -v zsh)"
-
-echo_done "ZSH configuration!"

@@ -1,0 +1,109 @@
+#!/usr/bin/env bash
+
+# set -Eeuo pipefail
+
+ROOT_DIR=$(dirname "${BASH_SOURCE[0]:-$0}")
+
+# shellcheck source=./packages.sh
+. "${ROOT_DIR}/packages.sh"
+# shellcheck source=scripts/utils.sh
+. "${ROOT_DIR}/scripts/utils.sh"
+# shellcheck source=scripts/helpers.sh
+. "${ROOT_DIR}/scripts/helpers.sh"
+
+PROGRAM=$(basename "${BASH_SOURCE[0]:-$0}")
+VERSION=0.3.0
+
+function display_help() {
+  cat <<EOF
+  $(help_title_section Usage)
+    ${PROGRAM} [options] [<command>]
+
+  $(help_title_section Commands)
+    check
+    packages [--repo | --aur]
+    modules
+    update
+    clean
+
+  $(help_title_section Options)
+    -h --help         Show this screen.
+    -v --version      Show version.
+EOF
+}
+
+function install_packages() {
+  local origin=${1:-all}
+  case $1 in
+    --repo)
+      # ===============================================
+      # Install packages from repo (--repo)
+      # ===============================================
+      for pkg in "${PKG[@]}"; do
+        install_package "$pkg"
+      done
+      ;;
+    --aur)
+      # ===============================================
+      # Install packages from aur (--aur)
+      # ===============================================
+      for aur in "${AUR[@]}"; do
+        install_package "$aur"
+      done
+      ;;
+    all)
+      install_packages repo
+      install_packages aur
+      ;;
+  esac
+}
+
+function install_modules() {
+  # ===============================================
+  # Run all sub folders install script
+  # ===============================================
+  local dirs=$(find . -maxdepth 1 -mindepth 1 -type d -print | sed -e 's/.\///')
+
+  for dir in $dirs; do
+    if [ ! -f "$dir/install.sh" ]; then
+      continue
+    fi
+
+    log_section ${dir}
+    ./${dir}/install.sh
+  done
+}
+
+case ${1:-java} in
+  -h | --help)
+    display_help
+    ;;
+  -v | --version)
+    display_version ${PROGRAM} ${VERSION}
+    ;;
+  check)
+    yay -Ps
+    ;;
+  packages)
+    ask_for_sudo
+    install_packages ${2:-all}
+    ;;
+  modules)
+    ask_for_sudo
+    install_modules
+    ;;
+  update)
+    ask_for_sudo
+    execute "yay -Syyu --needed --noconfirm" "Updating all system packages..."
+    xdg-mime default pcmanfm.desktop inode/directory
+    betterlockscreen -u ~/Pictures/login.jpg
+    ;;
+  clean)
+    ask_for_sudo
+    execute 'yay --noconfirm -Rns $(yay -Qdtq); yay -Yc' "Uninstalling unecessary packages..."
+    ;;
+  *)
+    display_help >&2
+    exit 1
+    ;;
+esac
